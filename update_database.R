@@ -154,12 +154,13 @@ update_files %>%
 DBI::dbDisconnect(con)
 
 
-# check for new files
-new_files <- files_df %>%
-  left_join(file_log, by='name', suffix=c('_rmis', '_db')) %>%
-  filter(
-    is.na(file_id)
-  )
+# check for new files - need to wait for RMIS to get new files before
+# further developing (testing this)
+# new_files <- files_df %>%
+#   left_join(file_log, by='name', suffix=c('_rmis', '_db')) %>%
+#   filter(
+#     is.na(file_id)
+#   )
 
 
 

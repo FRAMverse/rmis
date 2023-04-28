@@ -83,4 +83,22 @@ dbWriteTable(
   overwrite = TRUE
 )
 
+# set up indices on some tables - this will make
+# queries much, much faster
+
+DBI::dbSendStatement(con,
+                     '
+                      create index rel_tag
+                      on releases(tag_code_or_release_id);
+                      
+                      create index rec_tag
+                      on recoveries(tag_code);
+                      
+                      create index loc_location_id
+                      on locations(location_code);
+                     
+                     create index loc_location_type
+                      on locations(location_type);
+                     ')
+
 DBI::dbDisconnect(con)
