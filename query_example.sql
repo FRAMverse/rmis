@@ -31,16 +31,3 @@ where
                     '637171',
                     '637227',
                     '637350');
-
-/*
-create index rel_tag
-on releases(tag_code_or_release_id)
-
-create index rec_tag
-on recoveries(tag_code)
-
-create index loc_location_id
-on locations(location_code)
-*/
-
-drop index loc
