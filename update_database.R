@@ -29,10 +29,11 @@ files_df <- files[[1]] %>%
   janitor::clean_names() %>%
   select(name, last_modified) %>%
   filter(
-    str_detect(name, '.csv'),
-    str_detect(name, 'RC') |
-      str_detect(name, 'RL041_ALL_FULLSET.csv') |
-      str_detect(name, 'LC041_ALL_FULLSET.csv') 
+    str_detect(tolower(name), '.csv'),
+    substr(tolower(name), 1,2 ) == tolower('RC') | # recoveries
+      tolower(name) == tolower('RL041_ALL_FULLSET.csv') | # releases
+      tolower(name) == tolower('LC041_ALL_FULLSET.csv') | # locations
+      substr(tolower(name), 1,2 ) == tolower('CS')
   ) %>% 
   mutate(
     last_modified = as.character(as.Date(last_modified))
@@ -107,11 +108,11 @@ updater <- function (file_name, uuid, last_modified){
     DBI::dbClearResult(update)
     
     
-  } else {
+  } else if (substr(tolower(file_name), 1,2 ) == tolower('RC')) {
     print(glue::glue('Updating recovery dataset {file_name} - {uuid} - {last_modified}'))
     
     new_uuid = uuid::UUIDgenerate()
-    # replace releases table
+    # insert new data
     dbWriteTable(
       con,
       'recoveries',
@@ -136,6 +137,37 @@ updater <- function (file_name, uuid, last_modified){
     delete <-
       DBI::dbSendQuery(con, glue::glue(
         "DELETE FROM recoveries WHERE file_id = '{uuid}';"
+      ))
+    DBI::dbClearResult(delete)
+  } else if (substr(tolower(file_name), 1,2 ) == tolower('CS')) {
+    print(glue::glue('Updating catch sample dataset {file_name} - {uuid} - {last_modified}'))
+    
+    new_uuid = uuid::UUIDgenerate()
+    # insert new data
+    dbWriteTable(
+      con,
+      'catch_sample',
+      read_csv(paste0(rmis_url, file_name), col_types = cols(.default = "c")) %>%
+        mutate(file_id = new_uuid)
+      ,
+      append = TRUE
+    )
+    
+    print('Updating ')
+    update <- DBI::dbSendQuery(con, glue::glue(
+      "UPDATE file_log
+        SET
+           last_modified = '{last_modified}',
+           file_id = '{new_uuid}'
+        WHERE
+           file_id = '{uuid}';
+       "
+    ))
+    DBI::dbClearResult(update)
+    
+    delete <-
+      DBI::dbSendQuery(con, glue::glue(
+        "DELETE FROM catch_sample WHERE file_id = '{uuid}';"
       ))
     DBI::dbClearResult(delete)
   }
