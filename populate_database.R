@@ -29,10 +29,11 @@ files_df <- files[[1]] %>%
   janitor::clean_names() %>%
   select(name, last_modified) %>%
   filter(
-    str_detect(name, '.csv'),
-    str_detect(name, 'RC') |
-      str_detect(name, 'RL041_ALL_FULLSET.csv') |
-      str_detect(name, 'LC041_ALL_FULLSET.csv') 
+    str_detect(tolower(name), '.csv'),
+    substr(tolower(name), 1,2 ) == tolower('RC') | # recoveries
+    tolower(name) == tolower('RL041_ALL_FULLSET.csv') | # releases
+    tolower(name) == tolower('LC041_ALL_FULLSET.csv') | # locations
+      substr(tolower(name), 1,2 ) == tolower('CS')
   ) %>%
   rowwise() %>%
   mutate(
@@ -47,7 +48,7 @@ con <- dbConnect(RSQLite::SQLite(), "rmis.db")
 files_df %>%
   pull(name) %>%
   imap(~ {
-    if (.x == 'LC041_ALL_FULLSET.csv') {
+    if (tolower(.x) == tolower('LC041_ALL_FULLSET.csv')) {
       dbWriteTable(
         con,
         'locations',
@@ -55,7 +56,7 @@ files_df %>%
         ,
         overwrite = TRUE
       )
-    } else if (str_detect(.x, 'RC')) {
+    } else if (str_detect(tolower(.x), tolower('RC'))) {
       dbWriteTable(
         con,
         'recoveries',
@@ -64,13 +65,22 @@ files_df %>%
         ,
         append = TRUE
       )
-    } else if (.x == 'RL041_ALL_FULLSET.csv'){
+    } else if (tolower(.x) == tolower('RL041_ALL_FULLSET.csv')){
       dbWriteTable(
         con,
         'releases',
         read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"))
         ,
         overwrite = TRUE
+      )
+    } else if (str_detect(tolower(.x), tolower('CS'))) {
+      dbWriteTable(
+        con,
+        'catch_sample',
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c")) %>%
+          mutate(file_id = files_df$file_id[.y])
+        ,
+        append = TRUE
       )
     }
   }
@@ -86,19 +96,36 @@ dbWriteTable(
 # set up indices on some tables - this will make
 # queries much, much faster
 
-DBI::dbSendStatement(con,
+rel_index <- DBI::dbSendStatement(con,
                      '
                       create index rel_tag
                       on releases(tag_code_or_release_id);
-                      
-                      create index rec_tag
-                      on recoveries(tag_code);
-                      
-                      create index loc_location_id
-                      on locations(location_code);
-                     
-                     create index loc_location_type
-                      on locations(location_type);
                      ')
+DBI::dbClearResult(rel_index)
+
+rec_index <- DBI::dbSendStatement(con,
+                     '
+              create index rec_tag
+              on recoveries(tag_code);
+                    ')
+DBI::dbClearResult(rec_index)
+
+
+loc_id_index <- DBI::dbSendStatement(con,
+                     '
+create index loc_location_id
+on locations(location_code);
+                ')
+
+DBI::dbClearResult(loc_id_index)
+
+loc_type_index <- DBI::dbSendStatement(con,
+                     '
+create index loc_location_type
+on locations(location_type);
+')
+
+DBI::dbClearResult(loc_type_index)
+
 
 DBI::dbDisconnect(con)
