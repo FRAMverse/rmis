@@ -17,7 +17,7 @@ library(rvest)
 library(dplyr)
 
 # link to rmis ftp site
-rmis_url <- "https://www.rmpc.org/pub/data/"
+rmis_url <- "https://www.rmpc.org/pub/data-041/"
 
 # fetch names, last updated times from website
 filenames <- getURL(rmis_url) 
