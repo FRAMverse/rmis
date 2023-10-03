@@ -17,7 +17,7 @@ library(rvest)
 library(dplyr)
 
 # link to rmis ftp site
-rmis_url <- "https://www.rmpc.org/pub/data-041/"
+rmis_url <- "https://www.rmpc.org/pub/data/"
 
 # fetch names, last updated times from website
 filenames <- getURL(rmis_url) 
@@ -31,8 +31,8 @@ files_df <- files[[1]] %>%
   filter(
     str_detect(tolower(name), '.csv'),
     substr(tolower(name), 1,2 ) == tolower('RC') | # recoveries
-      tolower(name) == tolower('RL041_ALL_FULLSET.csv') | # releases
-      tolower(name) == tolower('LC041_ALL_FULLSET.csv') | # locations
+      tolower(name) == tolower('RL042_ALL_FULLSET.csv') | # releases
+      tolower(name) == tolower('LC042_ALL_FULLSET.csv') | # locations
       substr(tolower(name), 1,2 ) == tolower('CS')
   ) %>% 
   mutate(
@@ -58,7 +58,7 @@ updater <- function (file_name, uuid, last_modified){
     return(TRUE)
   }
   
-  if(file_name == 'RL041_ALL_FULLSET.csv') {
+  if(file_name == 'RL042_ALL_FULLSET.csv') {
     
     print(glue::glue('Updating releases dataset {file_name} - {uuid} - {last_modified}'))
     
@@ -85,7 +85,7 @@ updater <- function (file_name, uuid, last_modified){
 
     
     
-  } else if (file_name == 'LC041_ALL_FULLSET.csv'){
+  } else if (file_name == 'LC042_ALL_FULLSET.csv'){
     print(glue::glue('Updating locations dataset {file_name} - {uuid} - {last_modified}'))
     # replace releases table
     dbWriteTable(
@@ -175,7 +175,7 @@ updater <- function (file_name, uuid, last_modified){
   TRUE
 }
 
-#bc3a6698-5f02-41ae-ba3f-e16e9699d8c6
+#bc3a6698-5f02-42ae-ba3f-e16e9699d8c6
 
 update_files %>%
   rowwise() %>%

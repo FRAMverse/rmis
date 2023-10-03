@@ -17,7 +17,7 @@ library(rvest)
 library(dplyr)
 
 # link to rmis ftp site
-rmis_url <- "https://www.rmpc.org/pub/data-041/"
+rmis_url <- "https://www.rmpc.org/pub/data/"
 
 # fetch names, last updated times from website
 filenames <- getURL(rmis_url) 
@@ -31,8 +31,8 @@ files_df <- files[[1]] %>%
   filter(
     str_detect(tolower(name), '.csv'),
     substr(tolower(name), 1,2 ) == tolower('RC') | # recoveries
-    tolower(name) == tolower('RL041_ALL_FULLSET.csv') | # releases
-    tolower(name) == tolower('LC041_ALL_FULLSET.csv') | # locations
+    tolower(name) == tolower('RL042_ALL_FULLSET.csv') | # releases
+    tolower(name) == tolower('LC042_ALL_FULLSET.csv') | # locations
       substr(tolower(name), 1,2 ) == tolower('CS')
   ) %>%
   rowwise() %>%
@@ -48,7 +48,7 @@ con <- dbConnect(RSQLite::SQLite(), "rmis.db")
 files_df %>%
   pull(name) %>%
   imap(~ {
-    if (tolower(.x) == tolower('LC041_ALL_FULLSET.csv')) {
+    if (tolower(.x) == tolower('LC042_ALL_FULLSET.csv')) {
       dbWriteTable(
         con,
         'locations',
@@ -65,7 +65,7 @@ files_df %>%
         ,
         append = TRUE
       )
-    } else if (tolower(.x) == tolower('RL041_ALL_FULLSET.csv')){
+    } else if (tolower(.x) == tolower('RL042_ALL_FULLSET.csv')){
       dbWriteTable(
         con,
         'releases',
