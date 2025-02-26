@@ -41,7 +41,7 @@ files_df <- files[[1]] %>%
     last_modified = as.character(as.Date(last_modified))
   )
 
-con <- dbConnect(RSQLite::SQLite(), "rmis2.db")
+con <- dbConnect(RSQLite::SQLite(), "rmis.db")
 
 # don't want to commit this to memory it's multiple gb
 # populate the database

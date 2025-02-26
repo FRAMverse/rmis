@@ -39,7 +39,7 @@ files_df <- files[[1]] %>%
     last_modified = as.character(as.Date(last_modified))
   )
 
-con <- dbConnect(RSQLite::SQLite(), "rmis2.db")
+con <- dbConnect(RSQLite::SQLite(), "rmis.db")
 
 file_log <- dbReadTable(con, 'file_log') %>%
   as_tibble()
