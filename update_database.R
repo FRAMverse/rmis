@@ -183,7 +183,10 @@ update_files %>%
     success = updater(name, file_id, last_modified_rmis)
   )
 
+
+
 DBI::dbDisconnect(con)
+
 
 
 # check for new files - need to wait for RMIS to get new files before

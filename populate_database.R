@@ -6,8 +6,8 @@
 #### exist it will create one.        ####
 ##########################################
 
-
 # libraries
+library(here)
 library(RCurl)
 library(purrr)
 library(stringr)
@@ -31,8 +31,8 @@ files_df <- files[[1]] %>%
   filter(
     str_detect(tolower(name), '.csv'),
     substr(tolower(name), 1,2 ) == tolower('RC') | # recoveries
-    tolower(name) == tolower('RL042_ALL_FULLSET.csv') | # releases
-    tolower(name) == tolower('LC042_ALL_FULLSET.csv') | # locations
+      tolower(name) == tolower('RL042_ALL_FULLSET.csv') | # releases
+      tolower(name) == tolower('LC042_ALL_FULLSET.csv') | # locations
       substr(tolower(name), 1,2 ) == tolower('CS')
   ) %>%
   rowwise() %>%
@@ -41,7 +41,7 @@ files_df <- files[[1]] %>%
     last_modified = as.character(as.Date(last_modified))
   )
 
-con <- dbConnect(RSQLite::SQLite(), "rmis.db")
+con <- dbConnect(RSQLite::SQLite(), here("rmis.db"))
 
 # don't want to commit this to memory it's multiple gb
 # populate the database
@@ -82,9 +82,49 @@ files_df %>%
         ,
         append = TRUE
       )
+    } else if (tolower(.x) == tolower('location_type.csv')){
+      dbWriteTable(
+        con,
+        'location_type',
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"))
+        ,
+        overwrite = TRUE
+      )
+    } else if (tolower(.x) == tolower('gear.csv')){
+      dbWriteTable(
+        con,
+        'gear',
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"))
+        ,
+        overwrite = TRUE
+      )
+    } else if (tolower(.x) == tolower('marks.csv')){
+      dbWriteTable(
+        con,
+        'marks',
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"))
+        ,
+        overwrite = TRUE
+      )
+    } else if (tolower(.x) == tolower('species.csv')){
+      dbWriteTable(
+        con,
+        'species',
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"))
+        ,
+        overwrite = TRUE
+      )
+    }
+    else if (tolower(.x) == tolower('marks.csv')){
+      dbWriteTable(
+        con,
+        'marks',
+        read_csv(paste0(rmis_url, "marks.csv"), col_types = cols(.default = "c"))  ,
+        overwrite = TRUE
+      )
     }
   }
-)
+  )
 # save a file log of updates to rmis csvs
 dbWriteTable(
   con,
@@ -97,14 +137,14 @@ dbWriteTable(
 # queries much, much faster
 
 rel_index <- DBI::dbSendStatement(con,
-                     '
+                                  '
                       create index rel_tag
                       on releases(tag_code_or_release_id);
                      ')
 DBI::dbClearResult(rel_index)
 
 rec_index <- DBI::dbSendStatement(con,
-                     '
+                                  '
               create index rec_tag
               on recoveries(tag_code);
                     ')
@@ -112,7 +152,7 @@ DBI::dbClearResult(rec_index)
 
 
 loc_id_index <- DBI::dbSendStatement(con,
-                     '
+                                     '
 create index loc_location_id
 on locations(location_code);
                 ')
@@ -120,12 +160,17 @@ on locations(location_code);
 DBI::dbClearResult(loc_id_index)
 
 loc_type_index <- DBI::dbSendStatement(con,
-                     '
+                                       '
 create index loc_location_type
 on locations(location_type);
 ')
 
 DBI::dbClearResult(loc_type_index)
+
+
+
+
+
 
 
 DBI::dbDisconnect(con)
