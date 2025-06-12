@@ -115,14 +115,6 @@ files_df %>%
         overwrite = TRUE
       )
     }
-    else if (tolower(.x) == tolower('marks.csv')){
-      dbWriteTable(
-        con,
-        'marks',
-        read_csv(paste0(rmis_url, "marks.csv"), col_types = cols(.default = "c"))  ,
-        overwrite = TRUE
-      )
-    }
   }
   )
 # save a file log of updates to rmis csvs
