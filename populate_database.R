@@ -31,8 +31,8 @@ files_df <- files[[1]] %>%
   filter(
     str_detect(tolower(name), '.csv'),
     substr(tolower(name), 1,2 ) == tolower('RC') | # recoveries
-      tolower(name) == tolower('RL042_ALL_FULLSET.csv') | # releases
-      tolower(name) == tolower('LC042_ALL_FULLSET.csv') | # locations
+      tolower(name) == tolower('RL050_ALL_FULLSET.csv') | # releases
+      tolower(name) == tolower('LC050_ALL_FULLSET.csv') | # locations
       substr(tolower(name), 1,2 ) == tolower('CS')
   ) %>%
   rowwise() %>%
@@ -45,10 +45,20 @@ con <- dbConnect(RSQLite::SQLite(), here("rmis.db"))
 
 # don't want to commit this to memory it's multiple gb
 # populate the database
+
+# non-elegant fix to deal with people uploading to RMIS
+# with misspelled column names. uses CSVs with known
+# correct names to overwrite the names of everything
+
+rec_names <- read_csv(glue::glue("{rmis_url}RC050_NMFS_2025.csv")) |>
+  names()
+cs_names <- read_csv(glue::glue("{rmis_url}CS050_ADFG_1980.csv")) |>
+  names()
+
 files_df %>%
   pull(name) %>%
   imap(~ {
-    if (tolower(.x) == tolower('LC042_ALL_FULLSET.csv')) {
+    if (tolower(.x) == tolower('LC050_ALL_FULLSET.csv')) {
       dbWriteTable(
         con,
         'locations',
@@ -60,29 +70,31 @@ files_df %>%
       dbWriteTable(
         con,
         'recoveries',
-        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c")) %>%
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"),
+                 col_names = rec_names) %>%
           mutate(file_id = files_df$file_id[.y])
         ,
         append = TRUE
       )
-    } else if (tolower(.x) == tolower('RL042_ALL_FULLSET.csv')){
+    } else if (tolower(.x) == tolower('RL050_ALL_FULLSET.csv')){
       dbWriteTable(
         con,
         'releases',
         read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"))
         ,
         overwrite = TRUE
-      )
-    } else if (str_detect(tolower(.x), tolower('CS'))) {
+      ) } else if (str_detect(tolower(.x), tolower('CS'))) {
       dbWriteTable(
         con,
         'catch_sample',
-        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c")) %>%
+        read_csv(paste0(rmis_url, .x), col_types = cols(.default = "c"),
+                 col_names = cs_names) %>%
           mutate(file_id = files_df$file_id[.y])
         ,
         append = TRUE
       )
-    } else if (tolower(.x) == tolower('location_type.csv')){
+    }
+    else if (tolower(.x) == tolower('location_type.csv')){
       dbWriteTable(
         con,
         'location_type',

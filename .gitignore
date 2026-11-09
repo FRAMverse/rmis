@@ -41,3 +41,4 @@ cache
 
 # R Environment Variables
 .Renviron
+.positai
